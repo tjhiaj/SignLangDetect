@@ -56,4 +56,17 @@ def extract_keypoints(results):
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(63)
     return np.concatenate([pose, face, lh, rh])
 
-print(extract_keypoints(results)).shape
+# print(extract_keypoints(results)).shape
+
+DATA_PATH = os.path.join('MP_Data')                 #path for exported numpy arrays
+actions = np.array(['hello', 'thanks', 'iloveyou']) # actions to detect
+no_sequences = 30                                   # 30 videos of data
+sequence_length = 30                                # each video is 30 frames
+
+for action in actions:
+    for sequence in range(no_sequences):
+        try:
+            # throws error if directory exists
+            os.makedirs(os.path.join(DATA_PATH, action, str(sequence)))
+        except:
+            pass
