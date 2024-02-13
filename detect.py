@@ -31,32 +31,12 @@ def draw_landmarks(image, results):
                               mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4), 
                               mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2))
 
-cap = cv2.VideoCapture(0) # grab cam, device 0
-# set model
-with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-    # loop through all frames
-    while cap.isOpened():                      
-        ret, frame = cap.read()                               # read current feed, 2 return values 
-        image, results = mediapipe_detection(frame, holistic)
-        draw_landmarks(image, results)
-        cv2.imshow('OpenCV Feed', image)                      # show to screen image (not ret)
-        if cv2.waitKey(10) & 0xFF == ord('q'):                # wait for exit key press
-            break
-    cap.release()
-    cv2.destroyAllWindows()  
-
-# draw_landmarks(frame, results)
-# plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-# plt.show()
-
 def extract_keypoints(results):
     pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(112)
     face = np.array([[res.x, res.y, res.z] for res in results.face_landmarks.landmark]).flatten() if results.face_landmarks else np.zeros(1404)
     lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(63) #so no error thrown when hand out of frame
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(63)
     return np.concatenate([pose, face, lh, rh])
-
-# print(extract_keypoints(results)).shape
 
 DATA_PATH = os.path.join('MP_Data')                 #path for exported numpy arrays
 actions = np.array(['hello', 'thanks', 'iloveyou']) # actions to detect
@@ -70,3 +50,33 @@ for action in actions:
             os.makedirs(os.path.join(DATA_PATH, action, str(sequence)))
         except:
             pass
+
+cap = cv2.VideoCapture(0) # grab cam, device 0
+# set model
+with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+    for action in actions:
+        # loop through videos
+        for sequence in range(no_sequences):
+            for frame_num in range(sequence_length):                     
+                ret, frame = cap.read()                               # read current feed, 2 return values 
+                image, results = mediapipe_detection(frame, holistic)
+                draw_landmarks(image, results)
+
+                # wait logic
+                if frame_num == 0:
+                    cv2.putText(image, 'STARTING COLLECTION', (120, 200), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 4, cv2.LINE_AA)
+                    cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                    cv2.waitKey(2000) # 2s break
+                else:
+                    cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+
+                # export keypoints
+                keypoints = extract_keypoints(results)
+                npy_path = os.path.join(DATA_PATH, action, str(sequence), str(frame_num))
+                np.save(npy_path, keypoints)
+
+                cv2.imshow('OpenCV Feed', image)                      # show to screen image (not ret)
+                if cv2.waitKey(10) & 0xFF == ord('q'):                # wait for exit key press
+                    break
+    cap.release()
+    cv2.destroyAllWindows()  
