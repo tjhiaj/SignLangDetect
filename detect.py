@@ -4,6 +4,8 @@ import os
 from matplotlib import pyplot as plt
 import time
 import mediapipe as mp
+from sklearn.model_selection import train_test_split # partition data into training/testing
+from tensorflow.keras.utils import to_categorical # convert categorical data via one hot encoding
 
 mp_holistic = mp.solutions.holistic     #downloads model, makes detections
 mp_drawing = mp.solutions.drawing_utils # helps draw keypoints
@@ -80,3 +82,22 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
                     break
     cap.release()
     cv2.destroyAllWindows()  
+
+# dictionary of action to index
+label_map = {label:num for num, label in enumerate(actions)}
+
+# x and y, training model to detect relationship between labels, sequences has 90 videos 30 frames each 1662 keypoints each
+sequences, labels = [], []
+for action in actions:
+    for sequence in range(no_sequences):
+        window = []
+        for frame_num in range(sequence_length):
+            res = np.load(os.path.join(DATA_PATH, action, str(sequence), "().npy".format(frame_num))) # path to npy array
+            window.append(res)                                                                        # add frame to window
+        sequences.append(window)                                                                      # add video to sequences
+        labels.append(label_map[action])
+
+x = np.array(sequences)
+y = to_categorical(labels).astype(int)
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05) # test partition is 5% of data
