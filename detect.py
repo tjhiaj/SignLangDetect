@@ -6,6 +6,12 @@ import time
 import mediapipe as mp
 from sklearn.model_selection import train_test_split # partition data into training/testing
 from tensorflow.keras.utils import to_categorical # convert categorical data via one hot encoding
+from tensorflow.keras.models import Sequential # neural network
+from tensorflow.keras.layers import LSTM, Dense # temporal component to build network + recognize action, normal full connected layer
+from tensorflow.keras.callbacks import TensorBoard # logging
+
+# state of the art -> cnn + lstm (low accuracy)
+# mp holistic + lstm (less data for accuracy, faster training - dense network - 30-40 mil to .5 mil params)
 
 mp_holistic = mp.solutions.holistic     #downloads model, makes detections
 mp_drawing = mp.solutions.drawing_utils # helps draw keypoints
@@ -101,3 +107,14 @@ x = np.array(sequences)
 y = to_categorical(labels).astype(int)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05) # test partition is 5% of data
+
+log_dir = os.path.join('Logs')
+tb_callback = TensorBoard(log_dir=log_dir)
+
+model = Sequential()
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30, 1662))) # num units, next layer needs seq, function, each vid is 30 frames 1662 keypoints
+model.add(LSTM(128, return_sequences=True, activation='relu'))
+model.add(LSTM(64, return_sequences=False, activation='relu'))
+model.add(Dense(64, activation='relu')) # fully connected network neurons 
+model.add(Dense(32, activation='relu'))
+model.add(Dense(actions.shape[0], activation='softmax')) # find highest val of vector and predict that action from actions index
