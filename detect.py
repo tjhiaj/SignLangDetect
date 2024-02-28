@@ -9,8 +9,9 @@ from tensorflow.keras.utils import to_categorical # convert categorical data via
 from tensorflow.keras.models import Sequential # neural network
 from tensorflow.keras.layers import LSTM, Dense # temporal component to build network + recognize action, normal full connected layer
 from tensorflow.keras.callbacks import TensorBoard # logging
+from sklearn.metrics import accuracy_score, multilabel_confusion_matrix
 
-# state of the art -> cnn + lstm (low accuracy)
+# state of the art -> cnn + lstm (low accuracy w/ our data size)
 # mp holistic + lstm (less data for accuracy, faster training - dense network - 30-40 mil to .5 mil params)
 
 mp_holistic = mp.solutions.holistic     #downloads model, makes detections
@@ -51,43 +52,43 @@ actions = np.array(['hello', 'thanks', 'iloveyou']) # actions to detect
 no_sequences = 30                                   # 30 videos of data
 sequence_length = 30                                # each video is 30 frames
 
-for action in actions:
-    for sequence in range(no_sequences):
-        try:
-            # throws error if directory exists
-            os.makedirs(os.path.join(DATA_PATH, action, str(sequence)))
-        except:
-            pass
+# for action in actions:
+#     for sequence in range(no_sequences):
+#         try:
+#             # throws error if directory exists
+#             os.makedirs(os.path.join(DATA_PATH, action, str(sequence)))
+#         except:
+#             pass
 
-cap = cv2.VideoCapture(0) # grab cam, device 0
-# set model
-with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-    for action in actions:
-        # loop through videos
-        for sequence in range(no_sequences):
-            for frame_num in range(sequence_length):                     
-                ret, frame = cap.read()                               # read current feed, 2 return values 
-                image, results = mediapipe_detection(frame, holistic)
-                draw_landmarks(image, results)
+# cap = cv2.VideoCapture(0) # grab cam, device 0
+# # set model
+# with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+#     for action in actions:
+#         # loop through videos
+#         for sequence in range(no_sequences):
+#             for frame_num in range(sequence_length):                     
+#                 ret, frame = cap.read()                               # read current feed, 2 return values 
+#                 image, results = mediapipe_detection(frame, holistic)
+#                 draw_landmarks(image, results)
 
-                # wait logic
-                if frame_num == 0:
-                    cv2.putText(image, 'STARTING COLLECTION', (120, 200), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 4, cv2.LINE_AA)
-                    cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                    cv2.waitKey(2000) # 2s break
-                else:
-                    cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+#                 # wait logic
+#                 if frame_num == 0:
+#                     cv2.putText(image, 'STARTING COLLECTION', (120, 200), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 4, cv2.LINE_AA)
+#                     cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+#                     cv2.waitKey(2000) # 2s break
+#                 else:
+#                     cv2.putText(image, 'Collecting frames for {} Video Number {}'.format(action, sequence), (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                # export keypoints
-                keypoints = extract_keypoints(results)
-                npy_path = os.path.join(DATA_PATH, action, str(sequence), str(frame_num))
-                np.save(npy_path, keypoints)
+#                 # export keypoints
+#                 keypoints = extract_keypoints(results)
+#                 npy_path = os.path.join(DATA_PATH, action, str(sequence), str(frame_num))
+#                 np.save(npy_path, keypoints)
 
-                cv2.imshow('OpenCV Feed', image)                      # show to screen image (not ret)
-                if cv2.waitKey(10) & 0xFF == ord('q'):                # wait for exit key press
-                    break
-    cap.release()
-    cv2.destroyAllWindows()  
+#                 cv2.imshow('OpenCV Feed', image)                      # show to screen image (not ret)
+#                 if cv2.waitKey(10) & 0xFF == ord('q'):                # wait for exit key press
+#                     break
+#     cap.release()
+#     cv2.destroyAllWindows()  
 
 # dictionary of action to index
 label_map = {label:num for num, label in enumerate(actions)}
@@ -98,7 +99,7 @@ for action in actions:
     for sequence in range(no_sequences):
         window = []
         for frame_num in range(sequence_length):
-            res = np.load(os.path.join(DATA_PATH, action, str(sequence), "().npy".format(frame_num))) # path to npy array
+            res = np.load(os.path.join(DATA_PATH, action, str(sequence), "{}.npy".format(frame_num))) # path to npy array
             window.append(res)                                                                        # add frame to window
         sequences.append(window)                                                                      # add video to sequences
         labels.append(label_map[action])
@@ -108,8 +109,8 @@ y = to_categorical(labels).astype(int)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05) # test partition is 5% of data
 
-log_dir = os.path.join('Logs')
-tb_callback = TensorBoard(log_dir=log_dir)
+# log_dir = os.path.join('Logs')
+# tb_callback = TensorBoard(log_dir=log_dir)
 
 model = Sequential()
 model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30, 1662))) # num units, next layer needs seq, function, each vid is 30 frames 1662 keypoints
@@ -118,3 +119,24 @@ model.add(LSTM(64, return_sequences=False, activation='relu'))
 model.add(Dense(64, activation='relu')) # fully connected network neurons 
 model.add(Dense(32, activation='relu'))
 model.add(Dense(actions.shape[0], activation='softmax')) # find highest val of vector and predict that action from actions index
+
+# # compile model and feed
+# model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy']) # loss function for multi class classification model, binary is binary_crossentropy, regression uses mean squared error
+# model.fit(x_train, y_train, epochs=800, callbacks=[tb_callback]) # small amt of data fits into memory so mp allows you to not build data generator to build pipeline, train on the fly!
+
+# model.summary()
+# res = model.predict(x_test)
+# actions[np.argmax(res[0])]
+# actions[np.argmax(y_test[0])]
+
+# model.save('action.h5')
+model.load_weights('action.h5')
+
+# convert one hot encoding to category labels 0,1,2...
+yhat = model.predict(x_test)
+ytrue = np.argmax(y_test, axis=1).tolist() # axis=1 means want to convert second element in array
+yhat = np.argmax (yhat, axis=1).tolist()
+
+# true n, false p, false n, true p
+print(multilabel_confusion_matrix(ytrue, yhat))
+print(accuracy_score(ytrue, yhat))
