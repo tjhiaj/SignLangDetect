@@ -140,3 +140,30 @@ yhat = np.argmax (yhat, axis=1).tolist()
 # true n, false p, false n, true p
 print(multilabel_confusion_matrix(ytrue, yhat))
 print(accuracy_score(ytrue, yhat))
+
+#new detectin vars for real time predictions
+sequence = []   # 30 frames
+sentence = []   # concatenate history of detections
+threshold = 0.4 # only render results if above this
+
+cap = cv2.VideoCapture(0) # grab cam, device 0
+# set model
+with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:  
+    while cap.isOpened():                
+        ret, frame = cap.read()                               # read current feed, 2 return values 
+        image, results = mediapipe_detection(frame, holistic)
+        draw_landmarks(image, results)
+
+        keypoints = extract_keypoints(results)
+        sequence.insert(0, keypoints)
+        sequence = sequence[:30]
+
+        if len(sequence) == 30:
+            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+            print(actions[np.argmax(res)])
+
+        cv2.imshow('OpenCV Feed', image)                      # show to screen image (not ret)
+        if cv2.waitKey(10) & 0xFF == ord('q'):                # wait for exit key press
+            break
+    cap.release()
+    cv2.destroyAllWindows()  
