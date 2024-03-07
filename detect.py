@@ -141,7 +141,16 @@ yhat = np.argmax (yhat, axis=1).tolist()
 print(multilabel_confusion_matrix(ytrue, yhat))
 print(accuracy_score(ytrue, yhat))
 
-#new detectin vars for real time predictions
+colours = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
+def prob_viz(res, actions, input_frame, colors):
+    output_frame = input_frame.copy()
+    # num is action 0, 1, 2
+    for num, prob in enumerate(res):
+        cv2.rectangle(output_frame, (0, 60+num*40), (int(prob*100), 90+num*40), colors[num], -1) # -1 means fill in box
+        cv2.putText(output_frame, actions[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    return output_frame
+
+#new detection vars for real time predictions
 sequence = []   # 30 frames
 sentence = []   # concatenate history of detections
 threshold = 0.7 # only render results if above this
@@ -173,6 +182,8 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
             
             if len(sentence) > 5:
                 sentence = sentence[-5:]
+
+            image = prob_viz(res, actions, image, colours)
 
         #rendering
         cv2.rectangle(image, (0,0), (640,40), (245,117,16), -1) # -1 means fill
