@@ -138,8 +138,8 @@ ytrue = np.argmax(y_test, axis=1).tolist() # axis=1 means want to convert second
 yhat = np.argmax (yhat, axis=1).tolist()
 
 # true n, false p, false n, true p
-print(multilabel_confusion_matrix(ytrue, yhat))
-print(accuracy_score(ytrue, yhat))
+# print(multilabel_confusion_matrix(ytrue, yhat))
+# print(accuracy_score(ytrue, yhat))
 
 colours = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
 def prob_viz(res, actions, input_frame, colors):
@@ -169,7 +169,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         if len(sequence) == 30:
             res = model.predict(np.expand_dims(sequence, axis=0))[0]
-            print(actions[np.argmax(res)])
+            # print(actions[np.argmax(res)])
 
             # visualization
             if res[np.argmax(res)] > threshold:
@@ -177,7 +177,7 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
                     if actions[np.argmax(res)] != sentence[-1]: #check if current word is different from last
                         sentence.append(actions[np.argmax(res)])
                 else:
-                    print(actions[np.argmax(res)])
+                    # print(actions[np.argmax(res)])
                     sentence.append(actions[np.argmax(res)])
             
             if len(sentence) > 5:
