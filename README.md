@@ -27,7 +27,7 @@ A sign language model that integrates keypoint extraction, LSTM-based action det
 
 ## How I Built It
 
-First, I specify the path to the folder 'MP_Data' where I will store my training data [line 50]
+First, I grab the model I'll be using to make detections [line 17] and the module containing functions that'll help me draw keypoints [line 18] Then, I specify the path to the folder 'MP_Data' where I will store my training data [line 50]
 
     The os library lets me use OS dependent funcionality and the os.path module specifically lets me manipulate paths. os.path.join() concatenates the path-like objects passed to it. It adds directory separators after every nonempty element! In my case, I pass the single argument 'MP_Data' so that is my final path.
 
@@ -48,4 +48,6 @@ Next, I use the MediaPipe Holistic Model to start collecting landmark data [line
 
 I loop through my actions and their respective videos and, for each video, I capture its frames one by one using the VideoCapture.read() method from cv2 [line 70] Note that this method returns a tuple (return value, image) where the return value is checked for a successful reading before using the image.
 
-With each frame, I want to make a prediction. To do this, I need to convert my current image from its BGR colour code to RGB for my model to interpret it properly [line 21] I also need to set my image to Read Only before any processing so that it'll be passed by reference, saving memory [line 22] Then, I use the MediaPipe Holistic Model to make a prediction. [line 23] I want to return this prediction along with the image in its original state, so I make the image writable and convert the colour back to BGR before returning [lines 24-26]
+With each frame, I want to make a detection. To do this, I need to convert my current image from its BGR colour code to RGB for my model to interpret it properly [line 21] I also need to set my image to Read Only before any processing so that it'll be passed by reference, saving memory [line 22] Then, I use the MediaPipe Holistic Model to make a detection. [line 23] I want to return this detection along with the image in its original state, so I make the image writable and convert the colour back to BGR before returning [lines 24-26]
+
+Now, I have the original image and the detection for it. Next, I want to render the landmarks on the image. For each part (face, pose, left hand, right hand), I use the draw_landmarks method from MediaPipe. I pass to it the image, the x,y,z landmarks of the part, and the drawing specifications for the dots and lines representing the keypoints and connections between them [lines 29-41]
