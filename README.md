@@ -60,3 +60,7 @@ Next, I want to export my keypoints. For each part (face, pose, left hand, right
 
     I know exactly how many zeros I need based on how many landmarks are tracked by the model for that part. For example, the pose model tracks 33 landmarks and each landmark gets 4 array entries (x, y, z, visbility). Thus, I need a zero-array with 33*4=132 entries.
     Note: only pose has a visibility variable
+
+Then, I want to store the array of keypoints from that frame in its respective folder (recall, we made these directories at the start). I create the path MP_Data/action/video_num/frame_num and store the array in that folder [lines 82-85]
+
+Finally, I display the image onscreen using cv2.imshow(window_name, image) and wait 10ms to see if the exit key (q) is pressed [lines 87-88] If a key is pressed, cv2.waitKey() returns a corresponding integer. Note that 0xFF is 11111111 in binary and the integer returned by cv2.waitKey() also has a binary representation. We use bitwise AND (&) which means each bit in 0xFF is compared to each bit in the returned integer. If both bits are 1, the resulting bit is 1. Otherwise, the resulting bit is 0. This gives us the last 8 bits of the returned integer and masks all previous bits to 0. We check if these 8 bits match the ASCII code of 'q' and, if so, break the loop [line 89] Different platforms will return different integers for pressed keys but the last 8 bits usually match the ASCII codes cross-platform. Once out of the loop, the camera is released and all windows are destroyed [lines 90-91]
