@@ -70,4 +70,4 @@ Yay, that's all my training data! Now, I create a dictionary that maps action to
 
 Next, I create 2 empty arrays: sequences and labels [line 97] Sequences will contain 90 videos (30 for each action), each video having 30 frames and each frame having 1662 keypoints (sum of all landmarks tracked by the models for each part - face, left hand, right hand, pose). Labels will store the index of the action.
 
-Then, I set up the loops to populate these arrays. For each frame, I load the data from the numpy array stored in MP_Data from our previous training data collection. The String format() method allows met to replace the braces with the respective frame number.
+Then, I set up the loops to populate these arrays. For each frame, I load the data from the numpy array stored in MP_Data from our previous training data collection. The String format() method allows me to replace the braces with the respective frame number [lines 98-105]
