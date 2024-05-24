@@ -29,7 +29,7 @@ A sign language model that integrates keypoint extraction, LSTM-based action det
 
 First, I grab the model I'll be using to make detections [line 17] and the module containing functions that'll help me draw keypoints [line 18] Then, I specify the path to the folder 'MP_Data' where I will store my training data [line 50]
 
-    The os library lets me use OS dependent funcionality and the os.path module specifically lets me manipulate paths. os.path.join() concatenates the path-like objects passed to it. It adds directory separators after every nonempty element! In my case, I pass the single argument 'MP_Data' so that is my final path.
+> The os library lets me use OS dependent funcionality and the os.path module specifically lets me manipulate paths. os.path.join() concatenates the path-like objects passed to it. It adds directory separators after every nonempty element! In my case, I pass the single argument 'MP_Data' so that is my final path.
 
 Then, I create a NumPy array that stores my actions 'hello', 'thanks', and 'iloveyou' [line 51]
 
@@ -40,11 +40,11 @@ Now that I know I want 30 videos for each action, I need to make these subdirect
 ---
 Great! My directories are all set up. Now, I need to capture my training data. To start off, I grab my camera aka device 0 [line 63]
 
-    cv2 is the main module in OpenCV that offers image and video processing functions. cv2.VideoCapture() opens the camera at the index/id provided. In my case, I open the default device 0.
+> cv2 is the main module in OpenCV that offers image and video processing functions. cv2.VideoCapture() opens the camera at the index/id provided. In my case, I open the default device 0.
 
 Next, I use the MediaPipe Holistic Model to start collecting landmark data [line 65]
 
-    The MediaPipe Holistic pipeline integrates separate models for pose, face and hand components. This allows live perception of simultaneous human pose, face landmarks, and hand tracking in real-time.
+> The MediaPipe Holistic pipeline integrates separate models for pose, face and hand components. This allows live perception of simultaneous human pose, face landmarks, and hand tracking in real-time.
 
 I loop through my actions and their respective videos and, for each video, I capture its frames one by one using the VideoCapture.read() method from cv2 [line 70] Note that this method returns a tuple (return value, image) where the return value is checked for a successful reading before using the image.
 
@@ -54,12 +54,13 @@ Now, I have the original image and the detection for it. Next, I want to render 
 
 Then, I need some logic to indicate where I am in the collection process AND pause between videos so I can reset. Every time I start collecting for a video, I display 'STARTING COLLECTION' onscreen along with the action name and video number. Then, I wait 2 seconds before proceeding [lines 74-78] Remaining frames for that video don't get a pause (only the first one does!) [lines 79-80]
 
-    cv2.putText() is a method used to draw text strings on any image. Here, I pass to it the image, text, x-y position, font, font size, colour, line thickness, and line type. We use LINE_AA (anti-aliased) for a smoother look since pixels are added along the edges to blend with the background.
+> cv2.putText() is a method used to draw text strings on any image. Here, I pass to it the image, text, x-y position, font, font size, colour, line thickness, and line type. We use LINE_AA (anti-aliased) for a smoother look since pixels are added along the edges to blend with the background.
 
 Next, I want to export my keypoints. For each part (face, pose, left hand, right hand), I create a numpy array that stores an array for each landmark [lines 43-47] These nested arrays will contain the xyz coordinates of the landmark. Then, I flatten everything into one big array. Note that this only happens if the landmark collection of the part is nonempty. Otherwise, an array of zeros is assigned to that part. Finally, I return a giant array with the arrays of all parts concatenated together [line 48]
 
-    I know exactly how many zeros I need based on how many landmarks are tracked by the model for that part. For example, the pose model tracks 33 landmarks and each landmark gets 4 array entries (x, y, z, visbility). Thus, I need a zero-array with 33*4=132 entries.
-    Note: only pose has a visibility variable
+> I know exactly how many zeros I need based on how many landmarks are tracked by the model for that part. For example, the pose model tracks 33 landmarks and each landmark gets 4 array entries (x, y, z, visbility). Thus, I need a zero-array with 33*4=132 entries.
+>
+> Note: only pose has a visibility variable
 
 Then, I want to store the array of keypoints from that frame in its respective folder (recall, we made these directories at the start). I create the path MP_Data/action/video_num/frame_num and store the array in that folder [lines 82-85]
 
@@ -82,4 +83,10 @@ Now comes the fun part: prepping the model! I start off by loading/instantiating
 
 A unit is simply a cell that contains a memory state and a gate mechanism that controls the flow of information. You'll see that different layers have different numbers of units (64, 128, etc.) This number is usually a power of 2 but is determined through experimentation. The goal is to reach the sweet spot of complexity that yields the best results. We want to track enough features that we can attain expected results but not too many that it overcomplicates the learning process and confuses the model. 
 
-You'll also notice we use an activation function. Activation functions calculate the output of a node based on its inputs and their weights. They allow us to introduce non-linear relationships. In my case, I'm using relu or ReLU which stands for rectified linear unit and has form f(x) = max(0, x)
+You'll also notice we use an activation function. Activation functions calculate the output of a node based on its inputs and their weights. They allow us to introduce non-linear relationships. In my case, I'm using relu or ReLU which stands for rectified linear unit and has form f(x) = max(0, x). This means it is linear for all inputs greater than 0, but returns 0 for all negative inputs. It's the most popular function because it is almost linear (easy to optimize), mitigates the vanishing gradient problem, computes efficiently (negative inputs set to 0 mean only some nodes are activated), and is scalabe (simple threshold at 0). 
+
+> The vanishing gradient problem is a phenomenon where gradients become vanishingly small during backpropagation. A gradient is the change in weights with respect to the change in error or, as Fridman says, the change in ouput wen you change the input (kind of like the slope of a line). In my case, using relu, the gradient is preserved as 1 for all positive inputs since the function is linear for positive inputs. 
+>
+> Backpropagation is an algorithm to calculate the gradient (change in network's weights) to reduce the cost/error of the calculation. It starts at the final layer and looks at the difference between the current and desired outputs. Many factors can be changed to achieve this desired output including, weights, activation, and biases. The network looks at how it can change the weights/biases in that layer BUT activations can't be changed directly, so what it does is move to the previous layer and look at how changing the weights/biases there can give the desired activation change in the following layer. It repeats this process as it moves backwards and eventually sums all these little weight/bias changes between the layers until we have a change value for each node. This happens for every training example so that there are change values for every node for every training example. Then, all the change values for each node are averaged which helps find the gradient.
+>
+> The problem is that when weights and activations are small (less than 1), their products get smaller and smaller and so does the gradient. Tiny gradients mean the network's weights change less and less, eventually having no impact on optimizing the network. Relu prevents this by preserving the gradient at 1.
