@@ -99,6 +99,8 @@ Dense layers are fully-connected layers, meaning every neuron in the layer is co
 
 ---
 
-The next step is to compile the model. I use the compile() method that configures the model for training. The optimizer is an algorithm that changes the weights of a network during training to optimize it (minimize its loss function). Here, I uses 'Adam' (a combo of optimizers AdaGrad and RMSProp) which is known for its efficiency and stability. It requires little memory, making it useful for deep learning models with many parameters, such as LSTM networks. The algorithm performs gradient calculation, moment estimates, bias correction, and a parameter update. The first moment is the exponential moving average (EMA) of the gradients.
+The next step is to compile the model. I use the compile() method that configures the model for training. The optimizer is an algorithm that changes the weights of a network during training to optimize it (minimize its loss function). Here, I uses 'Adam' (a combo of optimizers AdaGrad and RMSProp) which is known for its efficiency and stability. It requires little memory, making it useful for deep learning models with many parameters, such as LSTM networks. The algorithm performs gradient calculation, moment estimates, bias correction, and a parameter update. Gradients were discussed earlier in this text. Moments are used to smooth/stabilize the gradient updates. The first moment is the exponential moving average (EMA) of the gradients, capturing the average direction of the gradients. The second moment is the EMA of the squared gradients, capturing the average magnitude of the gradients.
 
-> EMA is a moving average that places greater weight on more recent data points.
+> EMA is a moving average that places greater weight on more recent data points than older ones.
+
+Bias correction is needed because the moment estimates are initialized to 0 and so are biased towards 0. Finally, the parameters are updated based on the final moment estimates.
