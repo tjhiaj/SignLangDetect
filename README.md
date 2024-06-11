@@ -104,3 +104,7 @@ The next step is to compile the model. I use the compile() method that configure
 > EMA is a moving average that places greater weight on more recent data points than older ones.
 
 Bias correction is needed because the moment estimates are initialized to 0 and so are biased towards 0. Finally, the parameters are updated based on the final moment estimates.
+
+A loss function tells me how well my algorithm models my dataset. It will output a high number if my predictions aren't accurate, and a low one if they are. categorical_crossentropy is the loss function used in multi-class classification models where there are many categories and the model must decide which one the input belongs to. It allows the model to output the probabilities of each category, allowing me to evaluate its confidence if needed.
+
+Finally, the list of metrics to be evaluated by the model when training/testing. In my case, categorical_accuracy is the standard metric to assess the performance of a multi-class classification model on categorical label data. This calculation represents how often the prediction matches the actual "true" one-hot labels. It checks if the index of the max true value is equal to the index of the max predicted value.
